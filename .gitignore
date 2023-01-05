@@ -1,5 +1,5 @@
 # copies from template
-src/napari_cq1_segementation_viewer/_widget.py
+src/napari_cq1_segmentation_viewer/_widget.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

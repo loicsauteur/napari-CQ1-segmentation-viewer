@@ -1,6 +1,6 @@
 import numpy as np
 
-from napari_cq1_segementation_viewer import ExampleQWidget, example_magic_widget
+from napari_cq1_segmentation_viewer import ExampleQWidget, example_magic_widget
 
 
 # make_napari_viewer is a pytest fixture that returns a napari viewer object
