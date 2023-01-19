@@ -1,7 +1,7 @@
 import os
 from typing import TYPE_CHECKING
 
-from napari_cq1_segmentation_viewer.zarr_utils.utils_cq1 import getWellName
+from napari_cq1_segmentation_viewer.cq1_utils.utils_cq1 import getWellName
 
 if TYPE_CHECKING:
     import napari
