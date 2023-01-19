@@ -1,6 +1,8 @@
 import os
 from typing import TYPE_CHECKING
 
+from napari_cq1_segmentation_viewer.zarr_utils.utils_cq1 import getWellName
+
 if TYPE_CHECKING:
     import napari
 
@@ -48,7 +50,8 @@ class Quickload_CQ1_series(QWidget):
 
     def openTifImage(self, path, name):
         # get a list of files matching the well ID (and FOV)
-        wellID = name[0:10]
+        wellID = name[0:10] # WellID+FOVID
+        convID = getWellName(wellID[0:5])
         dirList = [f for f in os.listdir(path) if f.startswith(wellID)]
         dirList.sort()
         # get a list of available channels
@@ -61,7 +64,7 @@ class Quickload_CQ1_series(QWidget):
         if len(channels) == len(dirList):
             for i in dirList:
                 img = io.imread(path + i)
-                self.viewer.add_image(img, name=i, blending='additive')
+                self.viewer.add_image(img, name=i + ' (' + convID + ')', blending='additive')
         else:
             # open stacks
             pathDic = {}
@@ -70,7 +73,7 @@ class Quickload_CQ1_series(QWidget):
             for name, path in pathDic.items():
                 imCol = io.imread_collection(path)
                 imStack = io.concatenate_images(imCol)
-                self.viewer.add_image(imStack, name=name, blending='additive')
+                self.viewer.add_image(imStack, name=name + ' (' + convID + ')', blending='additive')
 
 
 class DropLabel(QLabel):

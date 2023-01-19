@@ -41,7 +41,7 @@ In a terminal cd to the folder
 ## Usage
 ### Segmentation Viewer
 Select a folder with the raw CQ1 TIF images (expects that the files start with a 'W' 
-and at least one file ends with 'C1.tif').
+and at least one file ends with 'C1.tif'). **Only works with 384 well plates.**
 
 Select a folder with the corresponding segmentation label images (expects that the files start with a 'W' 
 and at least one file ends with '_nuclei.tif').

@@ -15,6 +15,8 @@ from qtpy.QtWidgets import QVBoxLayout, QPushButton, QWidget, QLabel, QComboBox,
 
 from skimage import io
 
+from napari_cq1_segmentation_viewer.zarr_utils.utils_cq1 import getWellName
+
 if TYPE_CHECKING:
     import napari
 
@@ -77,11 +79,15 @@ class CQ1Viewer(QWidget):
 
 
     def _load_images(self):
+        '''
+        When load image button is pressed, load images to the napari viewer.
+        '''
         # close possibly open images
         if self.clearViewer.isChecked():
             self.viewer.layers.clear()
         # load images
-        wellID = self.wells_list.currentText()
+        wellID = self.wells_list.currentText()[0:5]
+        convID = self.wells_list.currentText()[5:]
         fovID = self.fov_list.currentText()
         imageID = wellID + fovID
 
@@ -93,13 +99,14 @@ class CQ1Viewer(QWidget):
                 if not (file[-6:] in channels):
                     channels.append(file[-6:])
         ## create path directioy
+        channels.sort()
         for c in channels:
             rawPaths[c.replace('.tif', '')] = str(self.raw_dir.value) + '/' + imageID + "*" + c
         # add the images to the viewer
         for k, v in rawPaths.items():
             imCol = io.imread_collection(v)
             imStack = io.concatenate_images(imCol)
-            self.viewer.add_image(imStack, name=k, blending='additive')
+            self.viewer.add_image(imStack, name=k + convID, blending='additive')
 
         # load segmentations
         segPaths = {}
@@ -108,16 +115,29 @@ class CQ1Viewer(QWidget):
                 segPaths[file] = str(self.seg_dir.value) + '/' + file
         for k, v in segPaths.items():
             img = io.imread(v)
-            self.viewer.add_labels(img, name=k.replace(imageID + '_', ''), blending='additive')
+            dispName = k.replace(imageID + '_', '')
+            dispName = dispName.replace('.tif', '')
+            dispName = dispName + convID
+            self.viewer.add_labels(img, name=dispName, blending='additive')
 
 
 
 
     def _well_changed(self, s):
+        '''
+        Function to change the FOV dropdown list when WellID choice is changed.
+        :param s (str): CQ1 well ID e.g. 'W0026-B02'
+        '''
         # update the fov dropdown
-        self.change_fov_dropList(s)
+        self.change_fov_dropList(s[0:5])
 
     def create_fileList(self):
+        '''
+        If file paths contain valid CQ1 data:
+        identify imaged wells (based on the segmentation folder),
+        and populate the wellID dropdown list, and FOV dropdown list.
+        Eventually, enable the load button.
+        '''
         # reset the dropdowns and their lists
         self.wells = []
         self.fovs = []
@@ -133,6 +153,8 @@ class CQ1Viewer(QWidget):
             for f in files:
                 if f.startswith('W') and f.endswith('.tif'):
                     wellID = f[0:5]
+                    convID = getWellName(wellID)
+                    wellID = wellID + ' (' + convID + ')'
                     if not (wellID in self.wells):
                         self.wells.append(wellID)
 
@@ -141,17 +163,22 @@ class CQ1Viewer(QWidget):
             self.wells_list.addItems(self.wells)
             self.fov_list.setDisabled(False)
             # populte also the FOVs dropdown
-            self.change_fov_dropList(self.wells_list.currentText())
+            self.change_fov_dropList(self.wells_list.currentText()[0:5])
             # enable the load button
             self.loadButton.setDisabled(False)
 
 
     def change_fov_dropList(self, wellID):
+        '''
+        Update the FOV dropdown list, based on the FOVs available in the segmentation folder.
+        :param wellID (str): CQ1 well ID e.g. 'W0026'
+        '''
         # reset the dropdown list
         self.fovs = []
         self.fov_list.clear()
 
         files = [f for f in os.listdir(str(self.seg_dir.value) + '/')]
+        files.sort()
         for f in files:
             if f.startswith(wellID) and f.endswith('.tif'):
                 fovID = f[5:10]
@@ -161,9 +188,10 @@ class CQ1Viewer(QWidget):
         self.fov_list.addItems(self.fovs)
 
 
-
-
     def _check_raw_path(self):
+        '''
+        Checks the path for the raw images.
+        '''
         files = [f for f in os.listdir(str(self.raw_dir.value) + '/')]
         for f in files:
             if f.startswith('W') and f.endswith('C1.tif'):
@@ -179,6 +207,9 @@ class CQ1Viewer(QWidget):
 
 
     def _check_seg_path(self):
+        '''
+        Checks the path for the segmentation images.
+        '''
         files = [f for f in os.listdir(str(self.seg_dir.value) + '/')]
         for f in files:
             if f.startswith('W') and f.endswith('_nuclei.tif'):
